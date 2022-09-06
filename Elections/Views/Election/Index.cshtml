@@ -1,0 +1,106 @@
+﻿@model List<Elections.Models.VotesViewModel>;
+@{
+    var idNmbr = 0;   
+}
+<div class="text-center" style="margin-bottom:15px">
+    <h3>Presidental Election Results</h3>
+    <div style="width:350px; margin:auto" class="text-center">
+        <hr />
+    </div>
+    <form enctype="multipart/form-data" onsubmit="UploadResults(this);return false;" 
+      method="post">
+      <div class="row mb-2">
+          <div class="col">
+             <input id="file-upload" class="btn btn-light" type="file" placeholder="File.csv"/>
+          </div>
+      </div>
+      <div class="row">
+          <div class="col">
+            <input class="btn btn-primary" type="submit"/>
+          </div>
+      </div>
+        <output name="result"></output>
+    </form>
+</div>
+    @foreach(var item in Model)
+    {
+    var divId = "multiCollapseExample" + idNmbr;
+    var target = "#" + divId;
+    <div class="row">
+            <div class="card-header font-weight-bold col" style="text-align: center !important">
+            <a class="navbar-toggler" type="button" data-toggle="collapse" data-target="@{@target}" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                        @item.Constituency
+                </a>
+            </div>
+        </div>
+        <div class="collapse multi-collapse" id="@{@divId}">
+            @{idNmbr++;}
+    <table class="table table-hover mb-3">
+        <thead>
+            <tr>
+                <th scope="col">
+                    Name
+                </th>
+                <th scope="col">
+                    Votes
+                </th>
+                <th scope="col">
+                    Percentage
+                </th>
+                <th scope="col">
+                    Error
+                </th>
+            </tr>
+        </thead>
+        @foreach(var item2 in item.votes)
+        {
+
+            <tr>
+                @{
+                    var percentageString = item2.Percentage != null ? item2.Percentage.Value.ToString("0.00") + '%' : "N/A";
+                    var numberOfVotesString = item2.NumberOfVotes != null ? item2.NumberOfVotes.ToString() : "N/A";
+                }
+                <td>
+                    @item2.CandidateName
+                </td>
+                <td>
+                    @numberOfVotesString
+                </td>
+                <td>
+                    @percentageString
+                </td>
+                <td>
+                    @item2.Error
+                </td>
+            </tr>
+        }
+    </table>
+        </div>
+    }
+
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script>
+    function UploadResults(formElement){
+        console.log(formElement);
+    var formData = new FormData();
+    formData.append("file", document.getElementById("file-upload").files[0]);
+    var b = $(this).serializeArray();
+        $.ajax(
+            {
+              url: "/Election/UploadResult",
+              data: formData,
+              processData: false,
+              contentType: false,
+              type: "POST",
+              success: function (data) {
+                  alert(data);
+                  window.location.reload();
+              }
+            }
+          );
+    }
+</script>
+
+
