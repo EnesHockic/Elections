@@ -24,27 +24,20 @@ namespace Elections.Application.Services
 
         public async Task<List<Candidate>> UpsertCandidates(List<VotesModel> model)
         {
-            try
+            List<string> candidates = new List<string>();
+            foreach (var item in model)
             {
-                List<string> candidates = new List<string>();
-                foreach (var item in model)
-                {
-                    candidates.Add(item.CandidateName);
-                }
-                var existingCandidates = await _dbContext.Candidates.Where(x => candidates.Contains(x.Name)).ToListAsync();
-                var newCandidates = candidates.Select(x => new Candidate()
-                {
-                    Name = x
-                }).Where(x => !existingCandidates.Any(y => y.Name == x.Name)).ToList();
+                candidates.Add(item.CandidateName);
+            }
+            var existingCandidates = await _dbContext.Candidates.Where(x => candidates.Contains(x.Name)).ToListAsync();
+            var newCandidates = candidates.Select(x => new Candidate()
+            {
+                Name = x
+            }).Where(x => !existingCandidates.Any(y => y.Name == x.Name)).ToList();
 
-                _dbContext.Candidates.AddRange(newCandidates);
-                await _dbContext.SaveChangesAsync(CancellationToken.None);
-                return newCandidates;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+            _dbContext.Candidates.AddRange(newCandidates);
+            await _dbContext.SaveChangesAsync(CancellationToken.None);
+            return newCandidates;
         }
     }
 }

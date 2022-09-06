@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Elections.Constants;
+using Elections.Helpers;
 
 namespace Presidental_Election.Controllers
 {
@@ -34,17 +35,27 @@ namespace Presidental_Election.Controllers
         public async Task<string> UploadResult(IFormFile file)
         {
 
-            if(file != null)
+            try
             {
-                var parsedVotes = await _csvFileParser.GetRecordsAsString(file);
-                var votes = getArrangedVotes(parsedVotes);
-                var newConstituencies = await _constituencyService.UpsertConstituencies(votes);
-                var newCandidates = await _candidateService.UpsertCandidates(votes);
-                var matchedModel = await MatchModelWithExistingData(votes);
-                var newVotes = await _votesService.StoreVotes(votes);
-                return "Success";
+                if(file != null)
+                {
+                    var parsedVotes = await _csvFileParser.GetRecordsAsString(file);
+                    var votes =VotesHelper.getArrangedVotes(parsedVotes);
+                    if(votes != null)
+                    {
+                        var newConstituencies = await _constituencyService.UpsertConstituencies(votes);
+                        var newCandidates = await _candidateService.UpsertCandidates(votes);
+                        var matchedModel = await MatchModelWithExistingData(votes);
+                        var newVotes = await _votesService.StoreVotes(votes);
+                        return "Success";
+                    }
+                }
+                return "File is empty or not sent!";
             }
-            return "File is not passed!";
+            catch(Exception ex)
+            {
+                return ex.Message;
+            }
         }
         async Task<List<VotesModel>> MatchModelWithExistingData(List<VotesModel> model)
         {
@@ -56,53 +67,6 @@ namespace Presidental_Election.Controllers
                 item.ConstituencyId = existingConstituencies.First(x => x.Name == item.Constituency).Id;
             }
             return model;
-        }
-
-        private List<VotesModel> getArrangedVotes(List<List<string>> votesString)
-        {
-            var result = new List<VotesModel>();
-            for (int i = 0; i < votesString.Count(); i++)
-            {
-                for (int j = 1; j < votesString[i].Count(); j++)
-                {
-                    var vote = new VotesModel();
-                    vote.Constituency = votesString[i][0];
-                    var numOfVotes = 0;
-                    var valid = true;
-                    if (Int32.TryParse(votesString[i][j], out numOfVotes))
-                    {
-                        vote.NumberOfVotes = numOfVotes;
-                        if(++j < votesString[i].Count() &&
-                            ValidCandidates.GetFullName(votesString[i][j]) != null)
-                        {
-                            vote.CandidateName = ValidCandidates.GetFullName(votesString[i][j]);
-                        }
-                        else
-                            valid = false;
-                    }
-                    else
-                    {
-                        if(ValidCandidates.GetFullName(votesString[i][j]) != null)
-                        {
-                            vote.CandidateName = ValidCandidates.GetFullName(votesString[i][j]);
-                            if (++j < votesString[i].Count())
-                            {
-                                if (Int32.TryParse(votesString[i][j], out numOfVotes))
-                                    vote.NumberOfVotes = Int32.Parse(votesString[i][j]);
-                                else
-                                    vote.Error = "Invalid number of votes!";
-                            }
-                            else
-                                vote.Error = "Invalid format!";
-                        }
-                        else 
-                            valid = false;
-                    }
-                    if(valid)
-                        result.Add(vote);
-                }
-            }
-            return result;
         }
     }
 }

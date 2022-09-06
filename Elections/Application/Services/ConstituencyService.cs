@@ -29,27 +29,20 @@ namespace Elections.Application.Services
 
         public async Task<List<Constituency>> UpsertConstituencies(List<VotesModel> model)
         {
-            try
+            List<string> constituencies = new List<string>();
+            foreach (var item in model)
             {
-                List<string> constituencies = new List<string>();
-                foreach (var item in model)
-                {
-                    constituencies.Add(item.Constituency);
-                }
-                var existingConstituencies = await _dbContext.Constituencies.Where(x => constituencies.Contains(x.Name)).ToListAsync();
-                var newConstituencies = constituencies.Select(x => new Constituency()
-                {
-                    Name = x
-                }).Where(x => !existingConstituencies.Any(y => y.Name == x.Name)).ToList();
+                constituencies.Add(item.Constituency);
+            }
+            var existingConstituencies = await _dbContext.Constituencies.Where(x => constituencies.Contains(x.Name)).ToListAsync();
+            var newConstituencies = constituencies.Select(x => new Constituency()
+            {
+                Name = x
+            }).Where(x => !existingConstituencies.Any(y => y.Name == x.Name)).ToList();
 
-                _dbContext.Constituencies.AddRange(newConstituencies);
-                await _dbContext.SaveChangesAsync(CancellationToken.None);
-                return newConstituencies;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+            _dbContext.Constituencies.AddRange(newConstituencies);
+            await _dbContext.SaveChangesAsync(CancellationToken.None);
+            return newConstituencies;
         }
     }
 }
